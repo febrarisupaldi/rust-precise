@@ -1,4 +1,4 @@
 /target
 .env
 /src/middleware/jwt.rs
-/logs/*
+/logs/*.log
