@@ -4,7 +4,6 @@ use actix_web::{dev::{forward_ready, Service, ServiceRequest, ServiceResponse, T
 use futures::future::{ready, Ready};
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims{
     pub sub: String,
@@ -82,7 +81,8 @@ where
                 }
                 Err(_) => {
                     return Box::pin(async move{
-                        Err(ErrorUnauthorized("Invalid token"))
+                        Err(ErrorUnauthorized(serde_json::json!({"status":"error","message": "Invalid token"}).to_string()))
+                        //Err(ErrorUnauthorized(serde_json::json!({"status":"error","message": "Invalid token"}).to_string()))
                     });
                 }
             }

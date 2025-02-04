@@ -31,7 +31,7 @@ pub async fn login((form, pool):(web::Json<UserLogin>, web::Data<MySqlPool>)) ->
 
     if validation.is_err(){
         let err = user.validate().err().unwrap();
-        return Ok(HttpResponse::Ok().status(StatusCode::BAD_REQUEST).json(serde_json::json!({"error": err})));
+        return Ok(HttpResponse::Ok().status(StatusCode::BAD_REQUEST).json(serde_json::json!({"status":"error","message": err})));
     }
 
     let check = sqlx::query("select password from precise.users where user_id = ?")
@@ -45,16 +45,16 @@ pub async fn login((form, pool):(web::Json<UserLogin>, web::Data<MySqlPool>)) ->
 
             if verify(&user.password.unwrap(), db_pass).is_ok(){
                 let token = create_jwt(user.user_id.clone().unwrap().as_str()).await;
-                let response = serde_json::json!({"message":"Success Login", "token": token});
+                let response = serde_json::json!({"status":"ok","message":"Success Login", "token": token});
                 Ok(HttpResponse::Ok().status(StatusCode::OK).json(response))
             }else{
-                let response = serde_json::json!({"message":"Success Login"});
+                let response = serde_json::json!({"status":"error","message":"Success Login"});
                 Ok(HttpResponse::Unauthorized().status(StatusCode::UNAUTHORIZED).json(response))
             }
 
         }
         Err(_) =>{
-            Ok(HttpResponse::NotFound().status(StatusCode::NOT_FOUND).json(serde_json::json!({"message":"No found record"})))
+            Ok(HttpResponse::NotFound().status(StatusCode::NOT_FOUND).json(serde_json::json!({"status":"error","message":"No found record"})))
         }
     }
 }
