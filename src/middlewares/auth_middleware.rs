@@ -1,6 +1,6 @@
 use std::{future::Future, pin::Pin};
 
-use actix_web::{dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform}, error::ErrorUnauthorized, Error, HttpMessage};
+use actix_web::{dev::{Service, ServiceRequest, ServiceResponse, Transform}, error::ErrorUnauthorized, Error, HttpMessage};
 use futures::future::{ready, Ready};
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
@@ -57,10 +57,14 @@ where
     type Error = Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>>>>;
 
-    forward_ready!(service);
+    fn poll_ready(&self, ctx: &mut core::task::Context<'_>) -> std::task::Poll<Result<(), Self::Error>> {
+        self.service.poll_ready(ctx)
+    }
+
+    //forward_ready!(service);
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        if req.path() == "/login" {
+        if req.path() == "/precise/api/auth/login" {
             let fut = self.service.call(req);
             return Box::pin(async move{ fut.await});
         }
@@ -89,7 +93,7 @@ where
         }
 
         Box::pin(async move{
-            Err(ErrorUnauthorized("No valid token found"))
+            Err(ErrorUnauthorized(serde_json::json!({"status":"error","message": "You don't have access to endpoint"}).to_string()))
         })
     }
 }

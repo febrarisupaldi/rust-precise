@@ -1,4 +1,5 @@
 /target
 .env
 /src/middleware/jwt.rs
-/logs/*.log
+/logs/*
+/!logs/.gitkeep

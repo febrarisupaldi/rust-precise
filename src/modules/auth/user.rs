@@ -5,8 +5,8 @@ use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use serde_json::Error;
 use sqlx::{MySqlPool, Row};
 use validator::Validate;
-use crate::{middleware::Claims, schemas::UserLogin};
-use bcrypt::{verify};
+use crate::{middlewares::Claims, schemas::auth::users_schema::UserLogin};
+use bcrypt::verify;
 
 
 async fn create_jwt(user_id: &str) -> String{
