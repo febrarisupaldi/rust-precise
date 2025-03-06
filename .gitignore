@@ -3,3 +3,4 @@
 /src/middleware/jwt.rs
 /logs/*
 /!logs/.gitkeep
+/tests

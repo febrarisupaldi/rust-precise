@@ -1,13 +1,13 @@
-pub mod docs{
+pub mod city_openapi{
     use utoipa::openapi::security::HttpAuthScheme;
     use utoipa::openapi::security::SecurityScheme;
     use utoipa::Modify;
     use utoipa::OpenApi;
 
+    use crate::schemas::master::city_schema::*;
+
     #[allow(unused_imports)]
-    use crate::schemas::master::country_schema::{CountrySchema, InsertCountrySchema, UpdateCountrySchema, CountryCodeQuery, CountryNameQuery, 
-        get_all_countries, create_country, update_country, get_country, exists_country_code, exists_country_name,
-        __path_get_all_countries, __path_create_country, __path_update_country, __path_get_country, __path_exists_country_code, __path_exists_country_name};
+    use crate::schemas::master::city_schema::{__path_get_all_cities, __path_get_city, __path_create_city, __path_update_city, __path_exists_city_code, __path_exists_city_name};
 
     /// OpenAPI Documentation for Precise
     #[derive(OpenApi)]
@@ -16,8 +16,8 @@ pub mod docs{
         security(
             ("bearerAuth"= [])
         ),
-        paths(get_all_countries, create_country, update_country, get_country, exists_country_code, exists_country_name),
-        components(schemas(CountrySchema, InsertCountrySchema, UpdateCountrySchema, CountryCodeQuery, CountryNameQuery)),
+        paths(get_all_cities, get_city, create_city, update_city, exists_city_code, exists_city_name),
+        components(schemas(CitiesSchema, InsertCitySchema, UpdateCitySchema, CityCodeQuery, CityNameQuery)),
         tags(
             (name = "Precise API", description="API for Precise")
         ),
@@ -36,8 +36,7 @@ pub mod docs{
         ),
         
     )]
-
-    pub struct ApiDoc;
+    pub struct CityApiDoc;
 
     struct SecurityAddon;
 

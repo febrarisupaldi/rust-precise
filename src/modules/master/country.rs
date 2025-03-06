@@ -6,7 +6,7 @@ pub mod country
     use validator::Validate;
 
     use crate::modules::helper::reason::reason::{update_reason, KindTransaction};
-    use crate::schemas::master::country_schema::{CountryCodeQuery, CountryNameQuery, CountrySchema, InsertCountrySchema, UpdateCountrySchema};
+    use crate::schemas::master::country_schema::{validate_country_code, validate_country_id, CountryCodeQuery, CountryNameQuery, CountrySchema, InsertCountrySchema, UpdateCountrySchema};
     use crate::schemas::api_schemas::ApiResponse;
 
     pub async fn get_all_countries(pool: web::Data<MySqlPool>) -> HttpResponse {
@@ -22,6 +22,7 @@ pub mod country
     }
 
     pub async fn get_country((path, pool): (web::Path<String>, web::Data<MySqlPool>)) -> HttpResponse {
+        
         let data = sqlx::query_as::<_, CountrySchema>("select country_id, country_code, country_name, created_on, created_by, updated_on, updated_by from precise.country where country_id = ?")
             .bind(path.into_inner())
             .fetch_one(pool.get_ref())
@@ -41,6 +42,10 @@ pub mod country
             return ApiResponse::<()>::error(400, &validation_errors.to_string()).to_http_response();
         }
 
+        if let Err(validation_errors) = validate_country_code(country_data.country_code.clone()).await{
+            return ApiResponse::<()>::error(400, &validation_errors.to_string()).to_http_response();
+        }
+
         let data = sqlx::query(
             "insert into precise.country(country_code, country_name, created_by)
             values(?, ?, ?)
@@ -57,9 +62,15 @@ pub mod country
         }
     }
 
-    pub async fn update_country((param, form, pool): (web::Path<String>, web::Json<UpdateCountrySchema>, web::Data<MySqlPool>)) -> HttpResponse {
+    pub async fn update_country((param, form, pool): (web::Path<u8>, web::Json<UpdateCountrySchema>, web::Data<MySqlPool>)) -> HttpResponse {
         let country_data = form.into_inner();
         
+        let country_id = param.into_inner();
+
+        if let Err(validation_errors) = validate_country_id(country_id).await{
+            return ApiResponse::<()>::error(400, &validation_errors.to_string()).to_http_response();
+        }
+
         let mut transaction: Transaction<'_, _> = match pool.begin().await {
             Ok(transaction) => transaction,
             Err(_) => return ApiResponse::<()>::error(500, "Failed to update data").to_http_response()
@@ -79,7 +90,7 @@ pub mod country
             .bind(country_data.country_code.clone())
             .bind(country_data.country_name.clone())
             .bind(country_data.updated_by.clone())
-            .bind(param.into_inner())
+            .bind(&country_id)
             .execute(&mut *transaction)
             .await;
 

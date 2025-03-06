@@ -1,1 +1,2 @@
-pub mod openapi;
+pub mod master;
+pub mod docs_routes;

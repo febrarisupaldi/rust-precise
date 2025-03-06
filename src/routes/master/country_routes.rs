@@ -1,4 +1,4 @@
-pub mod countries{
+pub mod country_routes{
     use actix_web::web;
 
     use crate::modules::master::country::country;

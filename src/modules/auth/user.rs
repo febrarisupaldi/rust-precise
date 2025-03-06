@@ -24,6 +24,16 @@ async fn create_jwt(user_id: &str) -> String{
     encode(&Header::new(Algorithm::default()), &claims, &EncodingKey::from_secret(secret.as_ref())).expect("Token cannot be created")
 }
 
+pub async fn generate_test_jwt() -> String {
+    let claims = Claims {
+        sub: "test_user".to_string(),
+        exp: 10000000000, // Expiry in future
+    };
+
+    encode(&Header::default(), &claims, &EncodingKey::from_secret("secret".as_ref()))
+        .unwrap()
+}
+
 pub async fn login((form, pool):(web::Json<UserLogin>, web::Data<MySqlPool>)) -> Result<HttpResponse, Error>{
     let user = form.into_inner();
 

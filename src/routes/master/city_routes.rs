@@ -1,4 +1,4 @@
-pub mod cities{
+pub mod city_routes{
     use actix_web::web;
 
     use crate::modules::master::city::city;

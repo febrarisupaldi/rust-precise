@@ -3,9 +3,10 @@ pub mod city{
     use sqlx::MySqlPool;
     use validator::Validate;
 
-    use crate::schemas::master::city_schema::{validate_city_code, validate_state_id};
+    use crate::schemas::master::city_schema::validate_city_code;
     use crate::schemas::master::city_schema::{CitiesSchema, CityCodeQuery, CityNameQuery, CitySchema, InsertCitySchema, UpdateCitySchema};
     use crate::schemas::api_schemas::ApiResponse;
+    use crate::schemas::master::state_schema::validate_state_id;
     #[utoipa::path(
         get,
         path = "/master/cities",

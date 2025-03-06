@@ -1,11 +1,12 @@
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
 use validator::{Validate, ValidationError};
-use crate::{helpers::option::option_ts_seconds, settings::db_pool};
+use crate::{utils::option::option_ts_seconds, settings::db_pool};
+use crate::schemas::api_schemas::ApiResponse;
 
-#[derive(Debug, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Serialize, Deserialize, FromRow, ToSchema)]
 pub struct CitiesSchema{
     pub city_id: u8,
     pub city_code: String,
@@ -20,22 +21,12 @@ pub struct CitiesSchema{
 
     pub updated_by: Option<String>
 }
-#[derive(Debug, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Serialize, Deserialize, FromRow, ToSchema)]
 pub struct CitySchema{
     pub city_id: u8,
     pub city_code: String,
     pub city_name: String,
     pub state_id: u8
-}
-
-#[derive(Deserialize, Serialize, FromRow)]
-pub struct CityNameQuery {
-    pub city_name: String,
-}
-
-#[derive(Deserialize, Serialize, FromRow)]
-pub struct CityCodeQuery {
-    pub city_code: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, Validate)]
@@ -54,29 +45,24 @@ pub struct InsertCitySchema{
     pub created_by: Option<String>
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, FromRow, ToSchema, Validate)]
 pub struct UpdateCitySchema{
     pub city_code: String,
     pub city_name: String,
     pub updated_by: Option<String>
 }
 
-pub async fn validate_state_id(state_id: u8) -> Result<(), ValidationError> {
-    let pool = db_pool().await;
-    let data = sqlx::query_scalar::<_, i64>("select count(*) from precise.state where state_id=?")
-        .bind(&state_id)
-        .fetch_one(&pool)
-        .await
-        .map(|count| count > 0)
-        .unwrap_or(false);
 
-    if data{
-        Ok(())
-    } else {
-        let mut err = ValidationError::new("state_id_not_found");
-        err.message = Some("State ID not found".into());
-        Err(err)
-    }
+#[derive(Deserialize, Serialize, FromRow, ToSchema, IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct CityNameQuery {
+    pub city_name: String,
+}
+
+#[derive(Deserialize, Serialize, FromRow, ToSchema, IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct CityCodeQuery {
+    pub city_code: String,
 }
 
 pub async fn validate_city_code(city_code: &str) -> Result<(), ValidationError> {
@@ -97,22 +83,81 @@ pub async fn validate_city_code(city_code: &str) -> Result<(), ValidationError> 
     }
 }
 
-// impl CitySchema{
-//     pub fn new(city_id: i32, city_code: String, city_name: String, state_name: String, country_name: String, created_on: NaiveDateTime, created_by: String, updated_on: NaiveDateTime, updated_by: String) -> Self{
-//         Self{
-//             city_id,
-//             city_code,
-//             city_name,
-//             state_name,
-//             country_name,
-//             created_on,
-//             created_by,
-//             updated_on,
-//             updated_by
-//         }
-//     }
+#[utoipa::path(
+    get,
+    tag = "City",
+    path = "/master/cities",
+    responses(
+        (status = 200, description = "Data retrieved successfully", body = ApiResponse<CitiesSchema>),
+        (status = 500, description = "Failed to fetch data", body = ApiResponse<String>)
+    ),
+    security(("bearer_auth" = []))
+)]
+pub fn get_all_cities() {}
 
-//     pub fn with_response(city: CitySchema) -> ApiResponse<CitySchema>{
-//         ApiResponse::success("Data retrieved successfully", city)
-//     }
-// }
+#[utoipa::path(
+    get,
+    tag = "City",
+    path = "/master/cities/{id}",
+    responses(
+        (status = 200, description = "Data retrieved successfully", body = ApiResponse<CitiesSchema>),
+        (status = 500, description = "Failed to fetch data", body = ApiResponse<String>)
+    ),
+    security(("bearer_auth" = []))
+)]
+pub fn get_city() {}
+
+#[utoipa::path(
+    post,
+    tag = "City",
+    path = "/master/cities",
+    request_body = InsertCitySchema,
+    responses(
+        (status = 200, description = "Data retrieved successfully", body = ApiResponse<InsertCitySchema>),
+        (status = 400, description = "Invalid Input", body = ApiResponse<String>),
+        (status = 500, description = "Failed to fetch data", body = ApiResponse<String>)
+    ),
+    security(("bearer_auth" = []))
+)]
+pub fn create_city() {}
+
+#[utoipa::path(
+    put,
+    tag = "City",
+    path = "/master/cities/{id}",
+    request_body = UpdateCitySchema,
+    responses(
+        (status = 200, description = "Data retrieved successfully", body = ApiResponse<UpdateCitySchema>),
+        (status = 400, description = "Invalid input", body = ApiResponse<String>),
+        (status = 404, description = "Data not found", body = ApiResponse<String>),
+        (status = 500, description = "Failed to fetch data", body = ApiResponse<String>)
+    ),
+    security(("bearer_auth" = []))
+)]
+pub fn update_city() {}
+
+#[utoipa::path(
+    get,
+    tag = "City",
+    path = "/precise/api/master/cities/exists/code",
+    params(CityCodeQuery),
+    responses(
+        (status = 200, description="City code exists", body = ApiResponse<u8>),
+        (status = 500, description="Failed to check city code", body = ApiResponse<u8>)
+    ),
+    security(("bearer_auth" = []))
+)]
+pub fn exists_city_code() {}
+
+#[utoipa::path(
+    get,
+    tag = "Country",
+    path = "/precise/api/master/cities/exists/name",
+    params(CityNameQuery),
+    responses(
+        (status = 200, description="City name exists", body = ApiResponse<u8>),
+        (status = 500, description="Failed to check city code", body = ApiResponse<u8>)
+    ),
+    security(("bearer_auth" = []))
+)]
+pub fn exists_city_name() {}
